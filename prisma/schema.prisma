@@ -1,0 +1,125 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Board {
+  id          String   @id @default(cuid())
+  name        String
+  type        BoardType
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  participants Participant[]
+  columns     Column[]
+  scores      Score[]
+  history     History[]
+  sessions    Session[]
+}
+
+model Participant {
+  id        String   @id @default(cuid())
+  name      String
+  boardId   String
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  scores    Score[]
+  createdAt DateTime @default(now())
+  // Match relationships
+  player1Matches Match[] @relation("Player1")
+  player2Matches Match[] @relation("Player2")
+}
+
+model Column {
+  id        String   @id @default(cuid())
+  name      String
+  type      ColumnType
+  order     Int
+  boardId   String
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  scores    Score[]
+}
+
+model Score {
+  id            String     @id @default(cuid())
+  value         Float
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  columnId      String?
+  column        Column?    @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  boardId       String
+  board         Board      @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model History {
+  id        String   @id @default(cuid())
+  action    String
+  details   Json
+  boardId   String
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Session {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  boardId     String
+  board       Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  status      SessionStatus @default(ACTIVE)
+  // Scoring configuration
+  winPoints   Int      @default(3)  // Points for winning a match
+  lossPoints  Int      @default(0)  // Points for losing a match
+  drawPoints  Int      @default(1)  // Points for drawing a match
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  matches     Match[]
+}
+
+model Match {
+  id          String   @id @default(cuid())
+  sessionId   String
+  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  player1Id   String
+  player1     Participant @relation("Player1", fields: [player1Id], references: [id])
+  player2Id   String
+  player2     Participant @relation("Player2", fields: [player2Id], references: [id])
+  player1Score Int
+  player2Score Int
+  winnerId    String?  // ID of the winning participant
+  status      MatchStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum BoardType {
+  LEADERBOARD
+  MULTISCORE
+}
+
+enum ColumnType {
+  NUMBER
+  TEXT
+  DATE
+  BOOLEAN
+}
+
+enum SessionStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum MatchStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
