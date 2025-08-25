@@ -29,8 +29,25 @@ npm run build
 npm run lint
 ```
 
+## Quick Deploy
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/smash-track)
+
 ## Deployment
 
 - **Platform**: Vercel
 - **Database**: Vercel Postgres
 - **Real-time**: Pusher
+
+### One-Click Deploy
+
+1. Click the "Deploy with Vercel" button above
+2. Configure environment variables:
+   - `DATABASE_URL`: Your PostgreSQL connection string
+   - `NEXTAUTH_SECRET`: Generate a random string
+   - `NEXTAUTH_URL`: Your Vercel domain
+3. Deploy!
+
+### Manual Setup
+
+See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed instructions.
