@@ -23,14 +23,18 @@ fi
 if [ ! -f .env.local ]; then
     echo "📝 Creating .env.local file..."
     cat > .env.local << EOF
-# Database
+# Database (Get this from your Neon dashboard)
 DATABASE_URL=""
 
 # Next.js
 NEXTAUTH_SECRET="$(openssl rand -base64 32)"
 NEXTAUTH_URL="http://localhost:3000"
+
+# App
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
 EOF
-    echo "⚠️  Please update DATABASE_URL in .env.local with your production database URL"
+    echo "⚠️  Please update DATABASE_URL in .env.local with your Neon PostgreSQL connection string"
+    echo "   Format: postgresql://username:password@ep-xxx-xxx.region.aws.neon.tech/database?sslmode=require"
 fi
 
 # Install dependencies
@@ -40,6 +44,15 @@ npm install
 # Generate Prisma client
 echo "🔧 Generating Prisma client..."
 npx prisma generate
+
+# Push database schema (if DATABASE_URL is set)
+if [ ! -z "$DATABASE_URL" ]; then
+    echo "🗄️  Pushing database schema to Neon..."
+    npx prisma db push
+else
+    echo "⚠️  Skipping database schema push (no DATABASE_URL found)"
+    echo "   Make sure to run 'npx prisma db push' after setting up your Neon database"
+fi
 
 # Build the application
 echo "🏗️  Building application..."

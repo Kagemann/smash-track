@@ -1,28 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { updateSessionSchema } from '@/types'
-
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
-
-const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  datasources: {
-    db: {
-      url: "file:./dev.db"
-    }
-  }
-})
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await prisma.session.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
       include: {
         board: {
           select: {
@@ -64,14 +50,14 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json()
     const validatedData = updateSessionSchema.parse(body)
 
     const session = await prisma.session.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: validatedData,
       include: {
         board: {
@@ -126,11 +112,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await prisma.session.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
       include: {
         board: {
           select: {
@@ -150,7 +136,7 @@ export async function DELETE(
 
     // Delete session (matches will be deleted due to cascade)
     await prisma.session.delete({
-      where: { id: params.id },
+      where: { id: (await params).id },
     })
 
     // Add to history

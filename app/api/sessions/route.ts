@@ -1,21 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { createSessionSchema } from '@/types'
 import { ensureDefaultColumns } from '@/lib/utils/board-utils'
-
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
-
-const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  datasources: {
-    db: {
-      url: "file:./dev.db"
-    }
-  }
-})
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
 export async function GET(request: NextRequest) {
   try {

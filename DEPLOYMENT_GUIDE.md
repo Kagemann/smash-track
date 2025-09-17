@@ -1,43 +1,47 @@
 # Smash Track - Vercel Deployment Guide
 
 ## Overview
-This guide will help you deploy Smash Track to Vercel with a production-ready PostgreSQL database.
+This guide will help you deploy Smash Track to Vercel with a production-ready Neon PostgreSQL database.
 
 ## Prerequisites
 - Vercel account (free tier available)
+- Neon account (free tier available)
 - GitHub/GitLab repository with your code
 - Node.js 18+ installed locally
 
 ## Step 1: Database Setup
 
-### Option A: Vercel Postgres (Recommended)
+### Option A: Neon PostgreSQL (Recommended)
 
-1. **Install Vercel CLI**:
+1. **Create Neon Account**:
+   - Go to [neon.tech](https://neon.tech)
+   - Sign up for a free account
+   - Verify your email
+
+2. **Create a New Project**:
+   - Click "Create Project"
+   - Choose a project name (e.g., "smash-track")
+   - Select a region close to your users
+   - Choose the free tier
+
+3. **Get Connection String**:
+   - In your Neon dashboard, go to "Connection Details"
+   - Copy the connection string (it will look like):
+     ```
+     postgresql://username:password@ep-xxx-xxx.region.aws.neon.tech/database?sslmode=require
+     ```
+
+4. **Install Vercel CLI**:
    ```bash
    npm i -g vercel
    ```
 
-2. **Login to Vercel**:
+5. **Login to Vercel**:
    ```bash
    vercel login
    ```
 
-3. **Create Vercel Postgres Database**:
-   ```bash
-   vercel storage create postgres
-   ```
-   
-   Follow the prompts:
-   - Choose a name for your database
-   - Select a region close to your users
-   - Choose the free tier (Hobby)
-
-4. **Link Database to Project**:
-   ```bash
-   vercel env pull .env.local
-   ```
-
-### Option B: PlanetScale (Alternative)
+### Option B: Vercel Postgres (Alternative)
 
 1. **Create PlanetScale Account**:
    - Go to [planetscale.com](https://planetscale.com)
@@ -59,12 +63,15 @@ This guide will help you deploy Smash Track to Vercel with a production-ready Po
 
 Create `.env.local` for local development:
 ```env
-# Database
-DATABASE_URL="your_production_database_url"
+# Database (from your Neon dashboard)
+DATABASE_URL="postgresql://username:password@ep-xxx-xxx.region.aws.neon.tech/database?sslmode=require"
 
 # Next.js
 NEXTAUTH_SECRET="your-secret-key-here"
 NEXTAUTH_URL="http://localhost:3000"
+
+# App
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
 ## Step 3: Database Migration
@@ -118,17 +125,21 @@ In Vercel Dashboard → Project Settings → Environment Variables:
 
 ### Production Variables:
 ```env
-DATABASE_URL="your_production_database_url"
+DATABASE_URL="postgresql://username:password@ep-xxx-xxx.region.aws.neon.tech/database?sslmode=require"
 NEXTAUTH_SECRET="your-production-secret"
 NEXTAUTH_URL="https://your-domain.vercel.app"
+NEXT_PUBLIC_APP_URL="https://your-domain.vercel.app"
 ```
 
 ### Preview Variables (for PR deployments):
 ```env
-DATABASE_URL="your_preview_database_url"
+DATABASE_URL="postgresql://username:password@ep-xxx-xxx.region.aws.neon.tech/database?sslmode=require"
 NEXTAUTH_SECRET="your-preview-secret"
 NEXTAUTH_URL="https://your-preview-domain.vercel.app"
+NEXT_PUBLIC_APP_URL="https://your-preview-domain.vercel.app"
 ```
+
+**Note**: You can use the same Neon database for both production and preview environments, or create separate databases for each.
 
 ## Step 6: Custom Domain (Optional)
 

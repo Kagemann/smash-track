@@ -1,20 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { updateBoardSchema } from '@/types'
-
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
-
-const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  datasources: {
-    db: {
-      url: "file:./dev.db"
-    }
-  }
-})
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
 // Helper function to get board URLs
 function getBoardUrls(boardId: string) {
@@ -26,13 +12,7 @@ function getBoardUrls(boardId: string) {
   }
 }
 
-interface RouteParams {
-  params: Promise<{
-    id: string
-  }>
-}
-
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
     const board = await prisma.board.findUnique({
@@ -92,7 +72,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function PUT(request: NextRequest, { params }: RouteParams) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
     const body = await request.json()
@@ -151,7 +131,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
     // Check if board exists

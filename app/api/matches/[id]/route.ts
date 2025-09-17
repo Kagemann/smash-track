@@ -1,21 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { updateMatchSchema, completeMatchSchema } from '@/types'
 import { getColumnId, getColumnUpdateValue, shouldUpdateColumn } from '@/lib/utils/board-utils'
-
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
-
-const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  datasources: {
-    db: {
-      url: "file:./dev.db"
-    }
-  }
-})
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
 // Helper function to calculate match points using session configuration
 const calculateMatchPoints = (player1Score: number, player2Score: number, session: any) => {
@@ -54,11 +40,11 @@ const calculateMatchPoints = (player1Score: number, player2Score: number, sessio
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const match = await prisma.match.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
       include: {
         session: {
           select: {
@@ -101,7 +87,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json()
@@ -147,7 +133,7 @@ export async function PUT(
        }
       
       const match = await prisma.match.findUnique({
-        where: { id: params.id },
+        where: { id: (await params).id },
         include: {
           session: {
             select: {
@@ -209,7 +195,7 @@ export async function PUT(
 
       // Update match
       const updatedMatch = await prisma.match.update({
-        where: { id: params.id },
+        where: { id: (await params).id },
         data: {
           player1Score: validatedData.player1Score,
           player2Score: validatedData.player2Score,
@@ -373,7 +359,7 @@ export async function PUT(
     const validatedData = updateMatchSchema.parse(body)
 
     const match = await prisma.match.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: validatedData,
       include: {
         session: {
@@ -431,11 +417,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const match = await prisma.match.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
       include: {
         session: {
           select: {
@@ -463,7 +449,7 @@ export async function DELETE(
 
     // Delete match
     await prisma.match.delete({
-      where: { id: params.id },
+      where: { id: (await params).id },
     })
 
     // Add to history
