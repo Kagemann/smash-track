@@ -11,6 +11,7 @@ import { useUIStore } from '@/lib/store/ui-store'
 import { useScoreStore } from '@/lib/store/score-store'
 import { LeaderboardTracker } from '@/components/boards/leaderboard-tracker'
 import { MultiscoreTracker } from '@/components/boards/multiscore-tracker'
+import { Navigation } from '@/components/ui/navigation'
 import { Board } from '@/types'
 
 export default function BoardViewerPage() {
@@ -80,60 +81,40 @@ export default function BoardViewerPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Header with Logo */}
-      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                onClick={() => router.push('/')}
-                className="gap-2 font-semibold text-lg"
-              >
-                🏆 SmashTrack
-              </Button>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">
-                Public View
-              </Badge>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Navigation variant="public" boardName={board?.name} />
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-4 sm:py-8">
         {/* Page Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4">
             {board.type === 'LEADERBOARD' ? (
-              <Trophy className="h-8 w-8 text-yellow-500" />
+              <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-500" />
             ) : (
-              <BarChart3 className="h-8 w-8 text-blue-500" />
+              <BarChart3 className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500" />
             )}
-            <h1 className="text-4xl font-bold">{board.name}</h1>
-            <Eye className="h-6 w-6 text-muted-foreground" />
+            <h1 className="text-2xl sm:text-4xl font-bold truncate">{board.name}</h1>
+            <Eye className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
           </div>
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Badge variant="secondary">
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-4 text-sm">
+            <Badge variant="secondary" className="text-xs">
               {board.type === 'LEADERBOARD' ? 'Leaderboard' : 'Multiscore'}
             </Badge>
-            <span className="text-muted-foreground">•</span>
+            <span className="text-muted-foreground hidden sm:inline">•</span>
             <span className="text-muted-foreground">
               {board.participants.length} participants
             </span>
-            <span className="text-muted-foreground">•</span>
+            <span className="text-muted-foreground hidden sm:inline">•</span>
             <span className="text-muted-foreground">
-              {board.scores.length} scores recorded
+              {board.scores.length} scores
             </span>
           </div>
-          <p className="text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground px-4">
             This is a public view of the board. Contact the board owner for admin access.
           </p>
         </div>
 
         {/* Board Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Participants</CardTitle>

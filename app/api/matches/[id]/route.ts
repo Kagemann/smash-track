@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { prisma, updateScore } from '@/lib/db'
 import { updateMatchSchema, completeMatchSchema } from '@/types'
 import { getColumnId, getColumnUpdateValue, shouldUpdateColumn } from '@/lib/utils/board-utils'
 
@@ -327,11 +327,16 @@ export async function PUT(
         }
       })
 
-      // Create all scores
+      // Create all scores using the updateScore function to properly accumulate
       if (scoreData.length > 0) {
-        await prisma.score.createMany({
-          data: scoreData,
-        })
+        for (const score of scoreData) {
+          await updateScore({
+            value: score.value,
+            participantId: score.participantId,
+            boardId: score.boardId,
+            columnId: score.columnId,
+          })
+        }
       }
 
       // Add to history

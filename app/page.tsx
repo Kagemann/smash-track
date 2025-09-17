@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Plus, Trophy, BarChart3 } from 'lucide-react'
 import { BoardCard } from '@/components/boards/board-card'
 import { BoardWizard } from '@/components/forms/board-wizard'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useBoardStore } from '@/lib/store/board-store'
 import { useUIStore } from '@/lib/store/ui-store'
 
@@ -12,6 +13,10 @@ export default function Home() {
   const { boards, loading, error, fetchBoards } = useBoardStore()
   const { showToast } = useUIStore()
   const [showWizard, setShowWizard] = useState(false)
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean
+    board: { id: string; name: string } | null
+  }>({ isOpen: false, board: null })
 
   useEffect(() => {
     fetchBoards()
@@ -32,9 +37,29 @@ export default function Home() {
     showToast('Edit board functionality coming soon!', 'info')
   }
 
-  const handleDeleteBoard = async (boardId: string) => {
-    // TODO: Implement delete with confirmation
-    showToast('Delete board functionality coming soon!', 'info')
+  const handleDeleteBoard = (boardId: string) => {
+    const board = boards.find(b => b.id === boardId)
+    if (!board) return
+
+    setDeleteDialog({
+      isOpen: true,
+      board: { id: board.id, name: board.name }
+    })
+  }
+
+  const confirmDeleteBoard = async () => {
+    if (!deleteDialog.board) return
+
+    const { deleteBoard } = useBoardStore.getState()
+    const success = await deleteBoard(deleteDialog.board.id)
+
+    if (success) {
+      showToast(`Board "${deleteDialog.board.name}" deleted successfully`, 'success')
+    } else {
+      showToast('Failed to delete board. Please try again.', 'error')
+    }
+
+    setDeleteDialog({ isOpen: false, board: null })
   }
 
   const handleShareBoard = (boardId: string) => {
@@ -180,6 +205,22 @@ export default function Home() {
       {showWizard && (
         <BoardWizard onClose={() => setShowWizard(false)} />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteDialog.isOpen}
+        onClose={() => setDeleteDialog({ isOpen: false, board: null })}
+        onConfirm={confirmDeleteBoard}
+        title="Delete Board"
+        description={
+          deleteDialog.board
+            ? `Are you sure you want to delete "${deleteDialog.board.name}"?\n\nThis action cannot be undone and will delete all associated data including participants, scores, sessions, and matches.`
+            : ''
+        }
+        confirmText="Delete Board"
+        cancelText="Cancel"
+        variant="destructive"
+      />
     </div>
   )
 }

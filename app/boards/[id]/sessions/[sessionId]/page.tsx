@@ -12,6 +12,7 @@ import { useSessionStore } from '@/lib/store/session-store'
 import { useMatchStore } from '@/lib/store/match-store'
 import { useUIStore } from '@/lib/store/ui-store'
 import { useScoreStore } from '@/lib/store/score-store'
+import { Navigation } from '@/components/ui/navigation'
 import { Board, Session, Match, Participant } from '@/types'
 
 export default function SessionPage() {
@@ -165,29 +166,34 @@ export default function SessionPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto px-4 py-8">
+      <Navigation variant="session" boardName={board?.name} sessionName={session?.name} />
+
+      <div className="container mx-auto px-4 py-4 sm:py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
             <Button
               variant="ghost"
+              size="sm"
               onClick={() => router.push(`/boards/${boardId}/sessions`)}
               className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Sessions
+              <span className="hidden sm:inline">Back to Sessions</span>
+              <span className="sm:hidden">Back</span>
             </Button>
-            <div>
-              <h1 className="text-3xl font-bold">{session.name}</h1>
-              <p className="text-muted-foreground">
+            <div className="min-w-0 flex-1 sm:flex-none">
+              <h1 className="text-2xl sm:text-3xl font-bold truncate">{session.name}</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 {board.name} • Session Management
               </p>
             </div>
           </div>
           {session.status === 'ACTIVE' && (
-            <Button onClick={() => setShowCreateForm(true)} className="gap-2">
+            <Button onClick={() => setShowCreateForm(true)} className="gap-2 w-full sm:w-auto">
               <Plus className="h-4 w-4" />
-              Add Match
+              <span className="hidden sm:inline">Add Match</span>
+              <span className="sm:hidden">Add Match</span>
             </Button>
           )}
         </div>
@@ -201,7 +207,7 @@ export default function SessionPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="flex items-center gap-2">
                 <Badge 
                   variant="secondary" 
@@ -276,7 +282,7 @@ export default function SessionPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {matches.map((match) => (
                 <MatchCard
                   key={match.id}

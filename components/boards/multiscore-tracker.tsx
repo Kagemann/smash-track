@@ -50,6 +50,15 @@ export function MultiscoreTracker({ board, readOnly = false }: MultiscoreTracker
     return valueB - valueA // Sort high to low
   })
 
+  // Sort columns so Points always comes last
+  const sortedColumns = [...board.columns].sort((a, b) => {
+    // Points column always goes last
+    if (a.name === 'Points') return 1
+    if (b.name === 'Points') return -1
+    // For other columns, maintain original order
+    return a.order - b.order
+  })
+
   const handleAddScore = useCallback(async (participantId: string, columnId: string, value: number) => {
     const result = await createScore({
       value,
@@ -60,10 +69,10 @@ export function MultiscoreTracker({ board, readOnly = false }: MultiscoreTracker
 
     if (result) {
       const participant = board.participants.find(p => p.id === participantId)
-      const column = board.columns.find(c => c.id === columnId)
+      const column = sortedColumns.find(c => c.id === columnId)
       showToast(`Added ${value} to ${participant?.name} in ${column?.name}`, 'success')
     }
-  }, [board.id, board.participants, board.columns, createScore, showToast])
+  }, [board.id, board.participants, sortedColumns, createScore, showToast])
 
   const handleUpdateScore = useCallback(async (scoreId: string, value: number) => {
     const result = await updateScore(scoreId, { value })
@@ -134,7 +143,7 @@ export function MultiscoreTracker({ board, readOnly = false }: MultiscoreTracker
     )
   }
 
-  if (board.columns.length === 0) {
+  if (sortedColumns.length === 0) {
     return (
       <div className="text-center py-8">
         <p className="text-muted-foreground">No columns configured for this multiscore board</p>
@@ -156,7 +165,7 @@ export function MultiscoreTracker({ board, readOnly = false }: MultiscoreTracker
               <thead>
                 <tr className="border-b">
                   <th className="text-left p-3 font-medium">Participant</th>
-                  {board.columns.map((column) => (
+                  {sortedColumns.map((column) => (
                     <th key={column.id} className="text-center p-3 font-medium">
                       <div className="flex items-center justify-center gap-2">
                         {getColumnIcon(column.type)}
@@ -173,7 +182,7 @@ export function MultiscoreTracker({ board, readOnly = false }: MultiscoreTracker
                 {sortedParticipants.map((participant) => (
                   <tr key={participant.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
                     <td className="p-3 font-medium">{participant.name}</td>
-                    {board.columns.map((column) => {
+                    {sortedColumns.map((column) => {
                       const score = getScoreForParticipantAndColumn(participant.id, column.id)
                       return (
                         <td key={column.id} className="p-3 text-center">

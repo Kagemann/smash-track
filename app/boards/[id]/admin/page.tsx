@@ -13,6 +13,7 @@ import { useScoreStore } from '@/lib/store/score-store'
 import { Board } from '@/types'
 import { LeaderboardTracker } from '@/components/boards/leaderboard-tracker'
 import { MultiscoreTracker } from '@/components/boards/multiscore-tracker'
+import { Navigation } from '@/components/ui/navigation'
 
 export default function BoardAdminPage() {
   const params = useParams()
@@ -85,40 +86,20 @@ export default function BoardAdminPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Header with Logo */}
-      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                onClick={() => router.push('/')}
-                className="gap-2 font-semibold text-lg"
-              >
-                🏆 SmashTrack
-              </Button>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">
-                Admin View
-              </Badge>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Navigation variant="admin" boardName={board?.name} />
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-4 sm:py-8">
         {/* Page Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
             <Button variant="outline" size="sm" onClick={() => window.history.back()}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
+              <span className="hidden sm:inline">Back</span>
             </Button>
-            <div>
-              <h1 className="text-3xl font-bold">{board.name}</h1>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant="secondary">
+            <div className="min-w-0 flex-1 sm:flex-none">
+              <h1 className="text-2xl sm:text-3xl font-bold truncate">{board.name}</h1>
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <Badge variant="secondary" className="text-xs">
                   {board.type === 'LEADERBOARD' ? 'Leaderboard' : 'Multiscore'}
                 </Badge>
                 {board.type === 'LEADERBOARD' ? (
@@ -130,26 +111,27 @@ export default function BoardAdminPage() {
             </div>
           </div>
           
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" asChild>
+          <div className="flex gap-2 w-full sm:w-auto justify-end">
+            <Button variant="outline" size="sm" asChild className="flex-1 sm:flex-none">
               <a href={`/boards/${boardId}/sessions`}>
                 <Calendar className="h-4 w-4 mr-2" />
-                Sessions
+                <span className="hidden sm:inline">Sessions</span>
+                <span className="sm:hidden">Sessions</span>
               </a>
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
               <Share2 className="h-4 w-4 mr-2" />
-              Share
+              <span className="hidden sm:inline">Share</span>
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
               <Settings className="h-4 w-4 mr-2" />
-              Settings
+              <span className="hidden sm:inline">Settings</span>
             </Button>
           </div>
         </div>
 
         {/* Board Info */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Participants</CardTitle>

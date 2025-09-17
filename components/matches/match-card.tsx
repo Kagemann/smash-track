@@ -76,12 +76,40 @@ export function MatchCard({ match, onEdit, onDelete, onComplete }: MatchCardProp
     console.log('Player1 score:', player1Score)
     console.log('Player2 score:', player2Score)
     
-    // Filter out empty custom scores
+    // Prepare custom scores with auto-populated Points Scored and Points Taken
+    const finalCustomScores = { ...customScores }
+    
+    // Auto-populate Points Scored and Points Taken if they exist as columns
+    if (match.session?.board?.columns) {
+      match.session.board.columns.forEach(column => {
+        if (column.name === 'Points Scored') {
+          finalCustomScores[column.id] = {
+            player1: player1Score,
+            player2: player2Score
+          }
+        } else if (column.name === 'Points Taken') {
+          finalCustomScores[column.id] = {
+            player1: player2Score, // Points taken by player1 = points scored by player2
+            player2: player1Score  // Points taken by player2 = points scored by player1
+          }
+        }
+      })
+    }
+    
+    // Filter out empty custom scores (but keep Points Scored and Points Taken)
     const filteredCustomScores = Object.fromEntries(
-      Object.entries(customScores).filter(([key, value]) => 
-        value && typeof value === 'object' && 
-        (value.player1 > 0 || value.player2 > 0)
-      )
+      Object.entries(finalCustomScores).filter(([key, value]) => {
+        if (!value || typeof value !== 'object') return false
+        
+        // Always include Points Scored and Points Taken
+        const column = match.session?.board?.columns?.find(col => col.id === key)
+        if (column && (column.name === 'Points Scored' || column.name === 'Points Taken')) {
+          return true
+        }
+        
+        // For other columns, only include if they have values > 0
+        return value.player1 > 0 || value.player2 > 0
+      })
     )
     
     console.log('Filtered custom scores:', filteredCustomScores)
@@ -217,46 +245,64 @@ export function MatchCard({ match, onEdit, onDelete, onComplete }: MatchCardProp
                 <div className="grid grid-cols-1 gap-3">
                   {match.session.board.columns
                     .filter(col => !['Wins', 'Losses', 'Points'].includes(col.name))
-                    .map(column => (
-                      <div key={column.id} className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor={`${column.id}-player1`}>
-                            {match.player1.name} - {column.name}
-                          </Label>
-                          <Input
-                            id={`${column.id}-player1`}
-                            type="number"
-                            min="0"
-                            value={customScores[column.id]?.player1 || 0}
-                            onChange={(e) => setCustomScores(prev => ({
-                              ...prev,
-                              [column.id]: {
-                                player1: parseInt(e.target.value) || 0,
-                                player2: prev[column.id]?.player2 || 0
+                    .map(column => {
+                      // Auto-populate Points Scored and Points Taken
+                      const isPointsScored = column.name === 'Points Scored'
+                      const isPointsTaken = column.name === 'Points Taken'
+                      
+                      return (
+                        <div key={column.id} className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor={`${column.id}-player1`}>
+                              {match.player1.name} - {column.name}
+                            </Label>
+                            <Input
+                              id={`${column.id}-player1`}
+                              type="number"
+                              min="0"
+                              value={
+                                isPointsScored ? player1Score :
+                                isPointsTaken ? player2Score :
+                                customScores[column.id]?.player1 || 0
                               }
-                            }))}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor={`${column.id}-player2`}>
-                            {match.player2.name} - {column.name}
-                          </Label>
-                          <Input
-                            id={`${column.id}-player2`}
-                            type="number"
-                            min="0"
-                            value={customScores[column.id]?.player2 || 0}
-                            onChange={(e) => setCustomScores(prev => ({
-                              ...prev,
-                              [column.id]: {
-                                player1: prev[column.id]?.player1 || 0,
-                                player2: parseInt(e.target.value) || 0
+                              onChange={(e) => setCustomScores(prev => ({
+                                ...prev,
+                                [column.id]: {
+                                  player1: parseInt(e.target.value) || 0,
+                                  player2: prev[column.id]?.player2 || 0
+                                }
+                              }))}
+                              disabled={isPointsScored || isPointsTaken}
+                              className={isPointsScored || isPointsTaken ? 'bg-gray-50 dark:bg-gray-800' : ''}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`${column.id}-player2`}>
+                              {match.player2.name} - {column.name}
+                            </Label>
+                            <Input
+                              id={`${column.id}-player2`}
+                              type="number"
+                              min="0"
+                              value={
+                                isPointsScored ? player2Score :
+                                isPointsTaken ? player1Score :
+                                customScores[column.id]?.player2 || 0
                               }
-                            }))}
-                          />
+                              onChange={(e) => setCustomScores(prev => ({
+                                ...prev,
+                                [column.id]: {
+                                  player1: prev[column.id]?.player1 || 0,
+                                  player2: parseInt(e.target.value) || 0
+                                }
+                              }))}
+                              disabled={isPointsScored || isPointsTaken}
+                              className={isPointsScored || isPointsTaken ? 'bg-gray-50 dark:bg-gray-800' : ''}
+                            />
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                 </div>
               </div>
             )}
