@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { prisma, updateScore } from '@/lib/db'
 import { createScoreSchema, updateScoreSchema } from '@/types'
 
 export async function GET(request: NextRequest) {
@@ -79,18 +79,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create score
-    const score = await prisma.score.create({
-      data: {
-        value: validatedData.value,
-        boardId: validatedData.boardId,
-        participantId: validatedData.participantId,
-        columnId: validatedData.columnId || null,
-      },
-      include: {
-        participant: true,
-        column: true,
-      },
+    // Create or update score (accumulate values)
+    const score = await updateScore({
+      value: validatedData.value,
+      boardId: validatedData.boardId,
+      participantId: validatedData.participantId,
+      columnId: validatedData.columnId || undefined,
     })
 
     // Add to history

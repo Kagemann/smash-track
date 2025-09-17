@@ -109,7 +109,7 @@ export async function updateScore(data: {
   if (existingScore) {
     return await prisma.score.update({
       where: { id: existingScore.id },
-      data: { value: data.value },
+      data: { value: existingScore.value + data.value },
       include: {
         participant: true,
         column: true,
