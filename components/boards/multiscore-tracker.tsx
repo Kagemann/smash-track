@@ -34,6 +34,22 @@ export function MultiscoreTracker({ board, readOnly = false }: MultiscoreTracker
     )
   }
 
+  // Find the Points column for sorting
+  const pointsColumn = board.columns.find(col => col.name === 'Points')
+  
+  // Sort participants by Points column (high to low)
+  const sortedParticipants = board.participants.sort((a, b) => {
+    if (!pointsColumn) return 0 // No sorting if no Points column
+    
+    const scoreA = getScoreForParticipantAndColumn(a.id, pointsColumn.id)
+    const scoreB = getScoreForParticipantAndColumn(b.id, pointsColumn.id)
+    
+    const valueA = scoreA?.value || 0
+    const valueB = scoreB?.value || 0
+    
+    return valueB - valueA // Sort high to low
+  })
+
   const handleAddScore = useCallback(async (participantId: string, columnId: string, value: number) => {
     const result = await createScore({
       value,
@@ -154,7 +170,7 @@ export function MultiscoreTracker({ board, readOnly = false }: MultiscoreTracker
                 </tr>
               </thead>
               <tbody>
-                {board.participants.map((participant) => (
+                {sortedParticipants.map((participant) => (
                   <tr key={participant.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
                     <td className="p-3 font-medium">{participant.name}</td>
                     {board.columns.map((column) => {

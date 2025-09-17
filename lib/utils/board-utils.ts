@@ -220,6 +220,8 @@ export async function ensureDefaultColumns(boardId: string) {
     { name: 'Wins', type: 'NUMBER' as const, order: 1 },
     { name: 'Losses', type: 'NUMBER' as const, order: 2 },
     { name: 'Points', type: 'NUMBER' as const, order: 3 },
+    { name: 'Points Scored', type: 'NUMBER' as const, order: 4 },
+    { name: 'Points Taken', type: 'NUMBER' as const, order: 5 },
   ]
 
   const existingColumnNames = board.columns.map(col => col.name)
@@ -276,6 +278,12 @@ export function getColumnUpdateValue(columnName: string, player1Score: number, p
     // This will be calculated by the session scoring system
     return 0 // Placeholder, actual points calculated elsewhere
   }
+  if (columnName === 'Points Scored') {
+    return playerScore
+  }
+  if (columnName === 'Points Taken') {
+    return opponentScore
+  }
 
   // Custom columns based on naming patterns
   if (columnNameLower.includes('score') || columnNameLower.includes('goal') || columnNameLower.includes('point')) {
@@ -301,7 +309,7 @@ export function shouldUpdateColumn(columnName: string) {
   const columnNameLower = columnName.toLowerCase()
   
   // Always update these columns
-  const alwaysUpdate = ['wins', 'losses', 'points', 'score', 'goal', 'point']
+  const alwaysUpdate = ['wins', 'losses', 'points', 'points scored', 'points taken', 'score', 'goal', 'point']
   
   return alwaysUpdate.some(keyword => columnNameLower.includes(keyword))
 }

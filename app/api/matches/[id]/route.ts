@@ -255,18 +255,22 @@ export async function PUT(
         }
       }
 
-      // Add default session scores (Wins, Losses, Points)
+      // Add default session scores (Wins, Losses, Points, Points Scored, Points Taken)
       addScoreIfColumnExists(match.player1Id, 'Wins', player1Wins)
       addScoreIfColumnExists(match.player1Id, 'Losses', player1Losses)
       addScoreIfColumnExists(match.player1Id, 'Points', player1Points)
+      addScoreIfColumnExists(match.player1Id, 'Points Scored', validatedData.player1Score)
+      addScoreIfColumnExists(match.player1Id, 'Points Taken', validatedData.player2Score)
       addScoreIfColumnExists(match.player2Id, 'Wins', player2Wins)
       addScoreIfColumnExists(match.player2Id, 'Losses', player2Losses)
       addScoreIfColumnExists(match.player2Id, 'Points', player2Points)
+      addScoreIfColumnExists(match.player2Id, 'Points Scored', validatedData.player2Score)
+      addScoreIfColumnExists(match.player2Id, 'Points Taken', validatedData.player1Score)
 
       // Add custom board column scores based on match results and user input
       board.columns.forEach(column => {
         // Skip default columns that are already handled
-        if (['Wins', 'Losses', 'Points'].includes(column.name)) {
+        if (['Wins', 'Losses', 'Points', 'Points Scored', 'Points Taken'].includes(column.name)) {
           return
         }
 
