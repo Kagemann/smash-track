@@ -1,42 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma, updateScore } from '@/lib/db'
 import { updateMatchSchema, completeMatchSchema } from '@/types'
-import { getColumnId, getColumnUpdateValue, shouldUpdateColumn } from '@/lib/utils/board-utils'
+import { getColumnId, getColumnUpdateValue, shouldUpdateColumn, calculateMatchPoints } from '@/lib/utils/session'
 
-// Helper function to calculate match points using session configuration
-const calculateMatchPoints = (player1Score: number, player2Score: number, session: any) => {
-  if (player1Score > player2Score) {
-    return { 
-      player1Points: session.winPoints, 
-      player2Points: session.lossPoints, 
-      winnerId: 'player1',
-      player1Wins: 1,
-      player2Wins: 0,
-      player1Losses: 0,
-      player2Losses: 1
-    }
-  } else if (player1Score < player2Score) {
-    return { 
-      player1Points: session.lossPoints, 
-      player2Points: session.winPoints, 
-      winnerId: 'player2',
-      player1Wins: 0,
-      player2Wins: 1,
-      player1Losses: 1,
-      player2Losses: 0
-    }
-  } else {
-    return { 
-      player1Points: session.drawPoints, 
-      player2Points: session.drawPoints, 
-      winnerId: null,
-      player1Wins: 0,
-      player2Wins: 0,
-      player1Losses: 0,
-      player2Losses: 0
-    }
-  }
-}
+// Using calculateMatchPoints from session utilities
 
 export async function GET(
   request: NextRequest,
@@ -190,7 +157,9 @@ export async function PUT(
       } = calculateMatchPoints(
         validatedData.player1Score,
         validatedData.player2Score,
-        match.session
+        match.session.winPoints,
+        match.session.lossPoints,
+        match.session.drawPoints
       )
 
       // Update match

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { createSessionSchema } from '@/types'
-import { ensureDefaultColumns } from '@/lib/utils/board-utils'
+import { ensureDefaultColumns } from '@/lib/utils/session'
 
 export async function GET(request: NextRequest) {
   try {

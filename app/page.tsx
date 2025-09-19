@@ -1,3 +1,8 @@
+/**
+ * Home page component
+ * Displays dashboard with board management and creation
+ */
+
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -8,6 +13,7 @@ import { BoardWizard } from '@/components/forms/board-wizard'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useBoardStore } from '@/lib/store/board-store'
 import { useUIStore } from '@/lib/store/ui-store'
+import { aggregate } from '@/lib/utils'
 
 export default function Home() {
   const { boards, loading, error, fetchBoards } = useBoardStore()
@@ -97,13 +103,13 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Stats */}
+        {/* Statistics Dashboard */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
             <div className="flex items-center gap-3">
               <Trophy className="h-6 w-6 text-yellow-500" />
               <div>
-                <p className="text-2xl font-bold">{boards.filter(b => b.type === 'LEADERBOARD').length}</p>
+                <p className="text-2xl font-bold">{aggregate.boardsByType(boards).leaderboards}</p>
                 <p className="text-sm text-muted-foreground">Leaderboards</p>
               </div>
             </div>
@@ -112,7 +118,7 @@ export default function Home() {
             <div className="flex items-center gap-3">
               <BarChart3 className="h-6 w-6 text-blue-500" />
               <div>
-                <p className="text-2xl font-bold">{boards.filter(b => b.type === 'MULTISCORE').length}</p>
+                <p className="text-2xl font-bold">{aggregate.boardsByType(boards).multiscore}</p>
                 <p className="text-sm text-muted-foreground">Multiscore Boards</p>
               </div>
             </div>
@@ -123,7 +129,7 @@ export default function Home() {
                 <span className="text-white text-xs font-bold">T</span>
               </div>
               <div>
-                <p className="text-2xl font-bold">{boards.length}</p>
+                <p className="text-2xl font-bold">{aggregate.boardsByType(boards).total}</p>
                 <p className="text-sm text-muted-foreground">Total Boards</p>
               </div>
             </div>

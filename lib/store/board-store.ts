@@ -1,83 +1,89 @@
-import { create } from 'zustand'
-import { Board, CreateBoardData, UpdateBoardData } from '@/types'
+/**
+ * Board state management store
+ * Manages board-related state using centralized API services
+ */
 
+import { create } from 'zustand'
+import { boardApi, ApiError } from '@/lib/services'
+import type { Board, CreateBoardInput, UpdateBoardInput, BoardWithLinks } from '@/types'
+
+/**
+ * Board store state interface
+ */
 interface BoardState {
   boards: Board[]
-  currentBoard: Board | null
+  currentBoard: BoardWithLinks | null
   loading: boolean
   error: string | null
 }
 
+/**
+ * Board store actions interface
+ */
 interface BoardActions {
+  // State setters
   setBoards: (boards: Board[]) => void
-  setCurrentBoard: (board: Board | null) => void
+  setCurrentBoard: (board: BoardWithLinks | null) => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
+  clearError: () => void
   
-  // Async actions
+  // Async operations
   fetchBoards: () => Promise<void>
-  createBoard: (data: CreateBoardData) => Promise<Board | null>
-  updateBoard: (id: string, data: UpdateBoardData) => Promise<Board | null>
+  fetchBoard: (id: string) => Promise<BoardWithLinks | null>
+  createBoard: (data: CreateBoardInput) => Promise<BoardWithLinks | null>
+  updateBoard: (id: string, data: UpdateBoardInput) => Promise<Board | null>
   deleteBoard: (id: string) => Promise<boolean>
-  fetchBoard: (id: string) => Promise<Board | null>
+  
+  // Utility actions
+  reset: () => void
 }
 
 type BoardStore = BoardState & BoardActions
 
 export const useBoardStore = create<BoardStore>((set, get) => ({
-  // State
+  // Initial state
   boards: [],
   currentBoard: null,
   loading: false,
   error: null,
 
-  // Actions
+  // State setters
   setBoards: (boards) => set({ boards }),
   setCurrentBoard: (board) => set({ currentBoard: board }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
+  clearError: () => set({ error: null }),
 
-  // Async actions
+  // Async operations
   fetchBoards: async () => {
     set({ loading: true, error: null })
     try {
-      const response = await fetch('/api/boards')
-      const data = await response.json()
-      
-      if (data.success) {
-        set({ boards: data.data, loading: false })
-      } else {
-        set({ error: data.error, loading: false })
-      }
+      const boards = await boardApi.boards.getAll()
+      set({ boards, loading: false })
     } catch (error) {
-      set({ error: 'Failed to fetch boards', loading: false })
+      const errorMessage = error instanceof ApiError 
+        ? error.message 
+        : 'Failed to fetch boards'
+      set({ error: errorMessage, loading: false })
     }
   },
 
   createBoard: async (data) => {
     set({ loading: true, error: null })
     try {
-      const response = await fetch('/api/boards', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-      const result = await response.json()
-      
-      if (result.success) {
-        const newBoard = result.data
-        set((state) => ({
-          boards: [newBoard, ...state.boards],
-          currentBoard: newBoard,
-          loading: false,
-        }))
-        return newBoard
-      } else {
-        set({ error: result.error, loading: false })
-        return null
-      }
+      const newBoard = await boardApi.boards.create(data)
+      set((state) => ({
+        boards: [newBoard, ...state.boards],
+        currentBoard: newBoard,
+        loading: false,
+      }))
+      return newBoard
     } catch (error) {
-      set({ error: 'Failed to create board', loading: false })
+      const errorMessage = error instanceof ApiError 
+        ? error.message 
+        : 'Failed to create board'
+      set({ error: errorMessage, loading: false })
       return null
     }
   },
@@ -85,29 +91,22 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
   updateBoard: async (id, data) => {
     set({ loading: true, error: null })
     try {
-      const response = await fetch(`/api/boards/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-      const result = await response.json()
-      
-      if (result.success) {
-        const updatedBoard = result.data
-        set((state) => ({
-          boards: state.boards.map((board) =>
-            board.id === id ? updatedBoard : board
-          ),
-          currentBoard: state.currentBoard?.id === id ? updatedBoard : state.currentBoard,
-          loading: false,
-        }))
-        return updatedBoard
-      } else {
-        set({ error: result.error, loading: false })
-        return null
-      }
+      const updatedBoard = await boardApi.boards.update(id, data)
+      set((state) => ({
+        boards: state.boards.map((board) =>
+          board.id === id ? updatedBoard : board
+        ),
+        currentBoard: state.currentBoard?.id === id 
+          ? { ...state.currentBoard, ...updatedBoard }
+          : state.currentBoard,
+        loading: false,
+      }))
+      return updatedBoard
     } catch (error) {
-      set({ error: 'Failed to update board', loading: false })
+      const errorMessage = error instanceof ApiError 
+        ? error.message 
+        : 'Failed to update board'
+      set({ error: errorMessage, loading: false })
       return null
     }
   },
@@ -115,24 +114,18 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
   deleteBoard: async (id) => {
     set({ loading: true, error: null })
     try {
-      const response = await fetch(`/api/boards/${id}`, {
-        method: 'DELETE',
-      })
-      const result = await response.json()
-      
-      if (result.success) {
-        set((state) => ({
-          boards: state.boards.filter((board) => board.id !== id),
-          currentBoard: state.currentBoard?.id === id ? null : state.currentBoard,
-          loading: false,
-        }))
-        return true
-      } else {
-        set({ error: result.error, loading: false })
-        return false
-      }
+      await boardApi.boards.delete(id)
+      set((state) => ({
+        boards: state.boards.filter((board) => board.id !== id),
+        currentBoard: state.currentBoard?.id === id ? null : state.currentBoard,
+        loading: false,
+      }))
+      return true
     } catch (error) {
-      set({ error: 'Failed to delete board', loading: false })
+      const errorMessage = error instanceof ApiError 
+        ? error.message 
+        : 'Failed to delete board'
+      set({ error: errorMessage, loading: false })
       return false
     }
   },
@@ -140,19 +133,23 @@ export const useBoardStore = create<BoardStore>((set, get) => ({
   fetchBoard: async (id) => {
     set({ loading: true, error: null })
     try {
-      const response = await fetch(`/api/boards/${id}`)
-      const data = await response.json()
-      
-      if (data.success) {
-        set({ currentBoard: data.data, loading: false })
-        return data.data
-      } else {
-        set({ error: data.error, loading: false })
-        return null
-      }
+      const board = await boardApi.boards.getById(id)
+      set({ currentBoard: board, loading: false })
+      return board
     } catch (error) {
-      set({ error: 'Failed to fetch board', loading: false })
+      const errorMessage = error instanceof ApiError 
+        ? error.message 
+        : 'Failed to fetch board'
+      set({ error: errorMessage, loading: false })
       return null
     }
   },
+
+  // Utility actions
+  reset: () => set({ 
+    boards: [], 
+    currentBoard: null, 
+    loading: false, 
+    error: null 
+  }),
 }))

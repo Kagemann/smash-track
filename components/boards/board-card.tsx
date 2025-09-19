@@ -16,7 +16,7 @@ import {
   Calendar
 } from 'lucide-react'
 import { Board } from '@/types'
-import { generateShareData } from '@/lib/utils/board-utils'
+import { generateShareData } from '@/lib/utils/url'
 import { useUIStore } from '@/lib/store/ui-store'
 
 interface BoardCardProps {

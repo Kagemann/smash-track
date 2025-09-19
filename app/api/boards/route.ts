@@ -1,14 +1,23 @@
+/**
+ * Boards API route handlers
+ * GET: List all boards
+ * POST: Create a new board
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { createBoardSchema } from '@/types'
+import { generateBoardUrl } from '@/lib/utils'
 
-// Helper function to get board URLs
+/**
+ * Generate board URLs for API responses
+ * @param boardId - Board ID
+ * @returns Object with public and admin URLs
+ */
 function getBoardUrls(boardId: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  
   return {
-    publicUrl: `${baseUrl}/boards/${boardId}`,
-    adminUrl: `${baseUrl}/boards/${boardId}/admin`,
+    publicUrl: generateBoardUrl(boardId, 'public'),
+    adminUrl: generateBoardUrl(boardId, 'admin'),
   }
 }
 
