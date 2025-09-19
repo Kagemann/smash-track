@@ -1,12 +1,12 @@
-import { PrismaClient } from '@prisma/client'
+/**
+ * Legacy database utilities - maintained for backward compatibility
+ * @deprecated Use the new service layer (lib/services) and database client (lib/database/client.ts)
+ */
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
+import { prisma } from '@/lib/database/client'
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient()
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+// Re-export prisma for backward compatibility
+export { prisma }
 
 // Database utility functions
 export async function getBoard(id: string) {
