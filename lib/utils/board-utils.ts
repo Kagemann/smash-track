@@ -1,15 +1,17 @@
-import { Board, Participant, Score, Column } from '@/types'
+import { Board, Participant, Score, Column } from '@/lib/types'
+import { getBoardUrls } from '@/lib/api/urls'
 
-// URL generation utilities
-export const generateBoardUrl = (id: string, type: 'public' | 'admin') => {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  return `${baseUrl}/boards/${id}${type === 'admin' ? '/admin' : ''}`
+// URL generation utilities (using centralized URL service)
+export const generateBoardUrl = (id: string, type: 'public' | 'admin'): string => {
+  const urls = getBoardUrls(id)
+  return type === 'admin' ? urls.adminUrl : urls.publicUrl
 }
 
 export const generateShareData = (board: Board) => {
+  const urls = getBoardUrls(board.id)
   return {
-    publicUrl: generateBoardUrl(board.id, 'public'),
-    adminUrl: generateBoardUrl(board.id, 'admin'),
+    publicUrl: urls.publicUrl,
+    adminUrl: urls.adminUrl,
     boardName: board.name,
   }
 }
@@ -201,63 +203,9 @@ export const isTouchDevice = () => {
 }
 
 /**
- * Ensures a board has the necessary default columns for session scoring
- * Creates Wins, Losses, and Points columns if they don't exist
+ * @deprecated These functions have been moved to the BoardService
+ * Use BoardService.ensureDefaultColumns() and BoardService.getColumnId() instead
  */
-export async function ensureDefaultColumns(boardId: string) {
-  const { prisma } = await import('@/lib/db')
-  
-  const board = await prisma.board.findUnique({
-    where: { id: boardId },
-    include: { columns: true }
-  })
-
-  if (!board) {
-    throw new Error('Board not found')
-  }
-
-  const defaultColumns = [
-    { name: 'Wins', type: 'NUMBER' as const, order: 1 },
-    { name: 'Losses', type: 'NUMBER' as const, order: 2 },
-    { name: 'Points', type: 'NUMBER' as const, order: 3 },
-    { name: 'Points Scored', type: 'NUMBER' as const, order: 4 },
-    { name: 'Points Taken', type: 'NUMBER' as const, order: 5 },
-  ]
-
-  const existingColumnNames = board.columns.map(col => col.name)
-  const missingColumns = defaultColumns.filter(col => !existingColumnNames.includes(col.name))
-
-  if (missingColumns.length > 0) {
-    await prisma.column.createMany({
-      data: missingColumns.map(col => ({
-        ...col,
-        boardId
-      }))
-    })
-  }
-
-  // Return the updated board with all columns
-  return await prisma.board.findUnique({
-    where: { id: boardId },
-    include: { columns: true }
-  })
-}
-
-/**
- * Gets the column ID for a specific column name on a board
- */
-export async function getColumnId(boardId: string, columnName: string) {
-  const { prisma } = await import('@/lib/db')
-  
-  const column = await prisma.column.findFirst({
-    where: {
-      boardId,
-      name: columnName
-    }
-  })
-
-  return column?.id
-}
 
 /**
  * Determines how a column should be updated based on match results
