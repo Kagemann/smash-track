@@ -260,14 +260,14 @@ export const createBoardSchema = z.object({
 })
 
 export const createScoreSchema = z.object({
-  value: z.number().min(0, "Score must be non-negative"),
+  value: z.number(), // Allow negative values for score increments/decrements
   boardId: z.string().min(1, "Board ID is required"),
   participantId: z.string().min(1, "Participant ID is required"),
   columnId: z.string().optional(), // For multiscore boards
 })
 
 export const updateScoreSchema = z.object({
-  value: z.number().min(0, "Score must be non-negative"),
+  value: z.number(), // Allow negative values for score decrements
 })
 
 export const updateBoardSchema = z.object({

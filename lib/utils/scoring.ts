@@ -66,7 +66,7 @@ export function calculateRanks(scores: Score[], participants: Participant[]): Ra
 export function validateScore(value: number, columnType?: string): boolean {
   switch (columnType) {
     case 'NUMBER':
-      return !isNaN(value) && isFinite(value) && value >= 0
+      return !isNaN(value) && isFinite(value) // Allow negative values for score increments
     case 'DATE':
       return !isNaN(value) && value > 0
     case 'BOOLEAN':

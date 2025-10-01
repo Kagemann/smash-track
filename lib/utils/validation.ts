@@ -108,9 +108,7 @@ export function validateScoreValue(value: number, columnType?: string): { valid:
       if (!isFinite(value)) {
         return { valid: false, error: 'Score must be a finite number' }
       }
-      if (value < 0) {
-        return { valid: false, error: 'Score cannot be negative' }
-      }
+      // Allow negative values for score increments/decrements
       break
     case 'BOOLEAN':
       if (value !== 0 && value !== 1) {
