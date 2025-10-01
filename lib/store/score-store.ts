@@ -1,5 +1,11 @@
+/**
+ * Score state management store  
+ * Manages score-related state using centralized API services
+ */
+
 import { create } from 'zustand'
-import { Score, CreateScoreData, UpdateScoreData } from '@/types'
+import { boardApi, ApiError } from '@/lib/services'
+import type { Score, CreateScoreData, UpdateScoreData } from '@/types'
 
 interface ScoreState {
   scores: Score[]
@@ -41,46 +47,40 @@ export const useScoreStore = create<ScoreStore>((set, get) => ({
   fetchScores: async (boardId, participantId, columnId) => {
     set({ loading: true, error: null })
     try {
-      const params = new URLSearchParams({ boardId })
-      if (participantId) params.append('participantId', participantId)
-      if (columnId) params.append('columnId', columnId)
+      const scores = await boardApi.scores.getByBoard(boardId)
       
-      const response = await fetch(`/api/scores?${params}`)
-      const data = await response.json()
-      
-      if (data.success) {
-        set({ scores: data.data, loading: false })
-      } else {
-        set({ error: data.error, loading: false })
+      // Filter by participant and column if specified
+      let filteredScores = scores
+      if (participantId) {
+        filteredScores = filteredScores.filter(score => score.participantId === participantId)
       }
+      if (columnId) {
+        filteredScores = filteredScores.filter(score => score.columnId === columnId)
+      }
+      
+      set({ scores: filteredScores, loading: false })
     } catch (error) {
-      set({ error: 'Failed to fetch scores', loading: false })
+      const errorMessage = error instanceof ApiError 
+        ? error.message 
+        : 'Failed to fetch scores'
+      set({ error: errorMessage, loading: false })
     }
   },
 
   createScore: async (data) => {
     set({ loading: true, error: null })
     try {
-      const response = await fetch('/api/scores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-      const result = await response.json()
-      
-      if (result.success) {
-        const newScore = result.data
-        set((state) => ({
-          scores: [newScore, ...state.scores],
-          loading: false,
-        }))
-        return newScore
-      } else {
-        set({ error: result.error, loading: false })
-        return null
-      }
+      const newScore = await boardApi.scores.createOrUpdate(data)
+      set((state) => ({
+        scores: [newScore, ...state.scores],
+        loading: false,
+      }))
+      return newScore
     } catch (error) {
-      set({ error: 'Failed to create score', loading: false })
+      const errorMessage = error instanceof ApiError 
+        ? error.message 
+        : 'Failed to create score'
+      set({ error: errorMessage, loading: false })
       return null
     }
   },
@@ -88,28 +88,19 @@ export const useScoreStore = create<ScoreStore>((set, get) => ({
   updateScore: async (id, data) => {
     set({ loading: true, error: null })
     try {
-      const response = await fetch(`/api/scores/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-      const result = await response.json()
-      
-      if (result.success) {
-        const updatedScore = result.data
-        set((state) => ({
-          scores: state.scores.map((score) =>
-            score.id === id ? updatedScore : score
-          ),
-          loading: false,
-        }))
-        return updatedScore
-      } else {
-        set({ error: result.error, loading: false })
-        return null
-      }
+      const updatedScore = await boardApi.scores.update(id, data)
+      set((state) => ({
+        scores: state.scores.map((score) =>
+          score.id === id ? updatedScore : score
+        ),
+        loading: false,
+      }))
+      return updatedScore
     } catch (error) {
-      set({ error: 'Failed to update score', loading: false })
+      const errorMessage = error instanceof ApiError 
+        ? error.message 
+        : 'Failed to update score'
+      set({ error: errorMessage, loading: false })
       return null
     }
   },
@@ -117,23 +108,17 @@ export const useScoreStore = create<ScoreStore>((set, get) => ({
   deleteScore: async (id) => {
     set({ loading: true, error: null })
     try {
-      const response = await fetch(`/api/scores/${id}`, {
-        method: 'DELETE',
-      })
-      const result = await response.json()
-      
-      if (result.success) {
-        set((state) => ({
-          scores: state.scores.filter((score) => score.id !== id),
-          loading: false,
-        }))
-        return true
-      } else {
-        set({ error: result.error, loading: false })
-        return false
-      }
+      await boardApi.scores.delete(id)
+      set((state) => ({
+        scores: state.scores.filter((score) => score.id !== id),
+        loading: false,
+      }))
+      return true
     } catch (error) {
-      set({ error: 'Failed to delete score', loading: false })
+      const errorMessage = error instanceof ApiError 
+        ? error.message 
+        : 'Failed to delete score'
+      set({ error: errorMessage, loading: false })
       return false
     }
   },
