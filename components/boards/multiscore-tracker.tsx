@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Minus, BarChart3, Edit3, Trash2 } from 'lucide-react'
+import { Plus, Minus, BarChart3, Edit3, Trash2, Trophy, Medal, Award } from 'lucide-react'
 import { useScoreStore } from '@/lib/store/score-store'
 import { useUIStore } from '@/lib/store/ui-store'
 import { Board, Column } from '@/types'
@@ -134,6 +134,32 @@ export function MultiscoreTracker({ board, readOnly = false }: MultiscoreTracker
     }
   }
 
+  const getRankIcon = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return <Trophy className="h-4 w-4 text-yellow-500" />
+      case 2:
+        return <Medal className="h-4 w-4 text-gray-400" />
+      case 3:
+        return <Award className="h-4 w-4 text-amber-600" />
+      default:
+        return <span className="text-xs font-medium text-muted-foreground">#{rank}</span>
+    }
+  }
+
+  const getRankBadge = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return <Badge className="bg-yellow-500 text-white text-xs">1st</Badge>
+      case 2:
+        return <Badge className="bg-gray-400 text-white text-xs">2nd</Badge>
+      case 3:
+        return <Badge className="bg-amber-600 text-white text-xs">3rd</Badge>
+      default:
+        return <Badge variant="secondary" className="text-xs">{rank}th</Badge>
+    }
+  }
+
   if (loading) {
     return (
       <div className="text-center py-8">
@@ -164,6 +190,7 @@ export function MultiscoreTracker({ board, readOnly = false }: MultiscoreTracker
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b">
+                  <th className="text-center p-3 font-medium w-20">Rank</th>
                   <th className="text-left p-3 font-medium">Participant</th>
                   {sortedColumns.map((column) => (
                     <th key={column.id} className="text-center p-3 font-medium">
@@ -179,8 +206,14 @@ export function MultiscoreTracker({ board, readOnly = false }: MultiscoreTracker
                 </tr>
               </thead>
               <tbody>
-                {sortedParticipants.map((participant) => (
+                {sortedParticipants.map((participant, index) => (
                   <tr key={participant.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <td className="p-3 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        {getRankIcon(index + 1)}
+                        {getRankBadge(index + 1)}
+                      </div>
+                    </td>
                     <td className="p-3 font-medium">{participant.name}</td>
                     {sortedColumns.map((column) => {
                       const score = getScoreForParticipantAndColumn(participant.id, column.id)

@@ -163,6 +163,13 @@ export default function BoardAdminPage() {
           </Card>
         </div>
 
+        {/* Score Tracking - Main Feature */}
+        {board.type === 'LEADERBOARD' ? (
+          <LeaderboardTracker board={board} />
+        ) : (
+          <MultiscoreTracker board={board} />
+        )}
+
         {/* Participants */}
         <Card className="mb-8">
           <CardHeader>
@@ -302,13 +309,6 @@ export default function BoardAdminPage() {
             )}
           </CardContent>
         </Card>
-
-                 {/* Score Tracking */}
-         {board.type === 'LEADERBOARD' ? (
-           <LeaderboardTracker board={board} />
-         ) : (
-           <MultiscoreTracker board={board} />
-         )}
 
          {/* Recent Activity */}
          <Card>

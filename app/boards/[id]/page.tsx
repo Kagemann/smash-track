@@ -146,6 +146,13 @@ export default function BoardViewerPage() {
           </Card>
         </div>
 
+        {/* Score Tracking - Main Feature */}
+        {board.type === 'LEADERBOARD' ? (
+          <LeaderboardTracker board={board} readOnly={true} />
+        ) : (
+          <MultiscoreTracker board={board} readOnly={true} />
+        )}
+
         {/* Participants List */}
         <Card className="mb-8">
           <CardHeader>
@@ -254,13 +261,6 @@ export default function BoardViewerPage() {
             )}
           </CardContent>
         </Card>
-
-        {/* Score Tracking */}
-        {board.type === 'LEADERBOARD' ? (
-          <LeaderboardTracker board={board} readOnly={true} />
-        ) : (
-          <MultiscoreTracker board={board} readOnly={true} />
-        )}
 
         {/* Footer */}
         <div className="text-center py-8">
