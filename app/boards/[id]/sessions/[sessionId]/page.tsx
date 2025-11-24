@@ -288,10 +288,21 @@ export default function SessionPage() {
                   key={match.id}
                   match={{
                     ...match,
-                    session: {
+                    session: match.session ? {
                       ...match.session,
+                      id: match.session.id,
+                      name: match.session.name,
+                      description: match.session.description,
+                      boardId: match.session.boardId,
+                      status: match.session.status,
+                      winPoints: match.session.winPoints,
+                      lossPoints: match.session.lossPoints,
+                      drawPoints: match.session.drawPoints,
+                      createdAt: match.session.createdAt,
+                      updatedAt: match.session.updatedAt,
+                      matches: match.session.matches || [],
                       board: board // Pass the board data to show custom columns
-                    }
+                    } : undefined
                   }}
                   onEdit={() => {}} // Could implement edit functionality
                   onDelete={() => handleDeleteMatch(match.id)}

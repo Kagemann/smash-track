@@ -280,9 +280,9 @@ export const matchService = {
 } as const
 
 /**
- * Tournament utilities service
+ * Session tournament utilities service (for session-based tournaments)
  */
-export const tournamentService = {
+export const sessionTournamentService = {
   /**
    * Generate a round-robin tournament for a session
    * @param sessionId - Session ID
@@ -348,5 +348,5 @@ export const tournamentService = {
 export const sessionApi = {
   sessions: sessionService,
   matches: matchService,
-  tournaments: tournamentService,
+  tournaments: sessionTournamentService,
 } as const

@@ -12,6 +12,7 @@ export const API_ENDPOINTS = {
   SCORES: '/api/scores',
   SESSIONS: '/api/sessions',
   MATCHES: '/api/matches',
+  TOURNAMENTS: '/api/tournaments',
   TEST: '/api/test',
 } as const
 
@@ -111,6 +112,36 @@ export const MATCH_STATUS = {
   IN_PROGRESS: 'IN_PROGRESS',
   COMPLETED: 'COMPLETED',
   CANCELLED: 'CANCELLED',
+} as const
+
+/**
+ * Tournament status configuration
+ */
+export const TOURNAMENT_STATUS = {
+  DRAFT: 'DRAFT',
+  ACTIVE: 'ACTIVE',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED',
+} as const
+
+/**
+ * Tournament phase configuration
+ */
+export const TOURNAMENT_PHASE = {
+  SETUP: 'SETUP',
+  GROUP_DRAW: 'GROUP_DRAW',
+  GROUP_STAGE: 'GROUP_STAGE',
+  KNOCKOUT: 'KNOCKOUT',
+  COMPLETED: 'COMPLETED',
+} as const
+
+/**
+ * Match round configuration
+ */
+export const MATCH_ROUND = {
+  GROUP: 'GROUP',
+  SEMIFINAL: 'SEMIFINAL',
+  FINAL: 'FINAL',
 } as const
 
 /**

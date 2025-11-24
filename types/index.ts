@@ -12,6 +12,7 @@ export interface Board {
   scores: Score[]
   history: History[]
   sessions: Session[]
+  tournaments: Tournament[]
 }
 
 export interface Participant {
@@ -70,8 +71,8 @@ export interface Session {
 
 export interface Match {
   id: string
-  sessionId: string
-  session: Session
+  sessionId?: string | null
+  session?: Session | null
   player1Id: string
   player1: Participant
   player2Id: string
@@ -80,6 +81,13 @@ export interface Match {
   player2Score: number
   winnerId?: string
   status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
+  // Tournament fields
+  groupId?: string | null
+  group?: Group | null
+  tournamentId?: string | null
+  tournament?: Tournament | null
+  round?: string | null // "GROUP", "SEMIFINAL", "FINAL"
+  matchNumber?: number | null
   createdAt: Date
   updatedAt: Date
 }
@@ -162,6 +170,69 @@ export interface CompleteMatchData {
   player1Score: number
   player2Score: number
   customScores?: Record<string, { player1: number, player2: number }>
+}
+
+// Tournament Types
+export interface Tournament {
+  id: string
+  name: string
+  description?: string
+  boardId: string
+  board: Board
+  status: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED'
+  phase: 'SETUP' | 'GROUP_DRAW' | 'GROUP_STAGE' | 'KNOCKOUT' | 'COMPLETED'
+  groupConfig: { groupSizes: number[], numGroups: number }
+  createdAt: Date
+  updatedAt: Date
+  groups: Group[]
+  participants: TournamentParticipant[]
+}
+
+export interface Group {
+  id: string
+  tournamentId: string
+  name: string
+  order: number
+  createdAt: Date
+  matches: Match[]
+  participants: TournamentParticipant[]
+}
+
+export interface TournamentParticipant {
+  id: string
+  tournamentId: string
+  participantId: string
+  participant: Participant
+  groupId?: string
+  group?: Group
+  seed?: number
+  createdAt: Date
+}
+
+export interface CreateTournamentData {
+  name: string
+  description?: string
+  boardId: string
+  groupSizes: number[]
+}
+
+export interface UpdateTournamentData {
+  name?: string
+  description?: string
+  status?: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED'
+}
+
+export interface GroupStanding {
+  participantId: string
+  participantName: string
+  wins: number
+  losses: number
+  draws: number
+  goalsFor: number
+  goalsAgainst: number
+  goalDifference: number
+  points: number
+  rank: number
 }
 
 // UI Types
@@ -332,6 +403,19 @@ export const completeMatchSchema = z.object({
   })).optional(),
 })
 
+export const createTournamentSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100),
+  description: z.string().max(500).optional(),
+  boardId: z.string().min(1, "Board ID is required"),
+  groupSizes: z.array(z.number().int().positive()).min(1, "At least one group required"),
+})
+
+export const updateTournamentSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100).optional(),
+  description: z.string().max(500).optional(),
+  status: z.enum(["DRAFT", "ACTIVE", "COMPLETED", "CANCELLED"]).optional(),
+})
+
 export type CreateBoardInput = z.infer<typeof createBoardSchema>
 export type UpdateBoardInput = z.infer<typeof updateBoardSchema>
 export type CreateParticipantInput = z.infer<typeof createParticipantSchema>
@@ -343,3 +427,5 @@ export type UpdateSessionInput = z.infer<typeof updateSessionSchema>
 export type CreateMatchInput = z.infer<typeof createMatchSchema>
 export type UpdateMatchInput = z.infer<typeof updateMatchSchema>
 export type CompleteMatchInput = z.infer<typeof completeMatchSchema>
+export type CreateTournamentInput = z.infer<typeof createTournamentSchema>
+export type UpdateTournamentInput = z.infer<typeof updateTournamentSchema>

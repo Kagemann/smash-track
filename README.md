@@ -13,6 +13,16 @@ A modern, powerful score tracking application for tournaments, competitions, and
 - **Round-robin**: Generate complete round-robin tournaments automatically
 - **Custom Scoring**: Configurable points system for wins, losses, and draws
 
+### 🏆 Tournament System
+- **Group Stage Tournaments**: Organize players into groups with round-robin matches
+- **Flexible Group Configuration**: Configure multiple groups with custom sizes
+- **Random or Manual Draw**: Choose between random group assignment or manual player placement
+- **Automatic Scheduling**: Generate complete round-robin schedules for all groups
+- **Live Standings**: Real-time group standings with points, goal difference, and tie-breakers
+- **Knockout Stage**: Automatic advancement to semifinals and finals based on group rankings
+- **Bracket Visualization**: Beautiful knockout bracket view with match tracking
+- **Match Management**: Start, complete, and track matches throughout the tournament
+
 ### ⚡ Real-time & Collaboration
 - **Live Updates**: Real-time score updates across multiple devices
 - **Share & Collaborate**: Generate shareable admin and public links  
@@ -38,10 +48,12 @@ SmashTrack follows clean architecture principles with clear separation of concer
 │   ├── ui/                # Base UI components (shadcn/ui)
 │   ├── forms/             # Form components
 │   ├── boards/            # Board-specific components
-│   └── sessions/          # Session management components  
+│   ├── sessions/          # Session management components
+│   └── tournaments/       # Tournament-specific components  
 ├── lib/                   # Core business logic
 │   ├── services/          # API services and data fetching
 │   ├── utils/             # Pure utility functions
+│   │   └── tournament/    # Tournament utilities (draw, schedule, ranking, advancement)
 │   ├── store/             # State management (Zustand)
 │   ├── constants/         # Application constants
 │   └── db/                # Database utilities and Prisma client
@@ -189,7 +201,23 @@ GET    /api/sessions            # List sessions
 POST   /api/sessions            # Create session
 GET    /api/matches             # List matches
 POST   /api/matches             # Create match
+PUT    /api/matches/[id]        # Update match (status, scores)
 POST   /api/matches/[id]/complete # Complete match
+```
+
+### Tournaments
+```
+GET    /api/tournaments              # List tournaments (by board)
+POST   /api/tournaments              # Create tournament
+GET    /api/tournaments/[id]         # Get tournament details
+PATCH  /api/tournaments/[id]         # Update tournament
+POST   /api/tournaments/[id]/players # Add players to tournament
+DELETE /api/tournaments/[id]/players/[participantId] # Remove player
+POST   /api/tournaments/[id]/draw    # Draw groups (random or manual)
+POST   /api/tournaments/[id]/schedule # Generate match schedule
+GET    /api/tournaments/[id]/groups  # Get group standings
+POST   /api/tournaments/[id]/advance # Advance to knockout stage
+GET    /api/tournaments/[id]/knockout # Get knockout bracket
 ```
 
 Full API documentation is available in the [API Reference](./docs/api.md).

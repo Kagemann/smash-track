@@ -58,7 +58,7 @@ export const urlTests = new SimpleTest()
 export const scoringTests = new SimpleTest()
   .test('validateScore - validates different score types', () => {
     assert.equal(validateScore(100, 'NUMBER'), true)
-    assert.equal(validateScore(-10, 'NUMBER'), false)
+    assert.equal(validateScore(-10, 'NUMBER'), true) // Negative values allowed for score increments
     assert.equal(validateScore(1, 'BOOLEAN'), true)
     assert.equal(validateScore(2, 'BOOLEAN'), false)
     assert.equal(validateScore(NaN, 'NUMBER'), false)

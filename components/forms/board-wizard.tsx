@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ArrowLeft, ArrowRight, Plus, X, Trophy, BarChart3 } from "lucide-react"
 import { useBoardStore } from "@/lib/store/board-store"
 import { useUIStore } from "@/lib/store/ui-store"
@@ -42,6 +43,10 @@ export function BoardWizard({ onClose }: BoardWizardProps) {
     columns: []
   })
   const [loading, setLoading] = useState(false)
+  const [showParticipantDialog, setShowParticipantDialog] = useState(false)
+  const [showColumnDialog, setShowColumnDialog] = useState(false)
+  const [participantName, setParticipantName] = useState("")
+  const [columnName, setColumnName] = useState("")
 
   const steps = [
     { id: "type", title: "Board Type", description: "Choose your board type" },
@@ -102,13 +107,14 @@ export function BoardWizard({ onClose }: BoardWizardProps) {
     }
   }
 
-  const addParticipant = () => {
-    const name = prompt("Enter participant name:")
-    if (name?.trim()) {
+  const handleAddParticipant = () => {
+    if (participantName?.trim()) {
       setBoardData(prev => ({
         ...prev,
-        participants: [...prev.participants, name.trim()]
+        participants: [...prev.participants, participantName.trim()]
       }))
+      setParticipantName("")
+      setShowParticipantDialog(false)
     }
   }
 
@@ -119,13 +125,14 @@ export function BoardWizard({ onClose }: BoardWizardProps) {
     }))
   }
 
-  const addColumn = () => {
-    const name = prompt("Enter column name:")
-    if (name?.trim()) {
+  const handleAddColumn = () => {
+    if (columnName?.trim()) {
       setBoardData(prev => ({
         ...prev,
-        columns: [...prev.columns, { name: name.trim(), type: "number" }]
+        columns: [...prev.columns, { name: columnName.trim(), type: "number" }]
       }))
+      setColumnName("")
+      setShowColumnDialog(false)
     }
   }
 
@@ -222,7 +229,7 @@ export function BoardWizard({ onClose }: BoardWizardProps) {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <Label>Participants</Label>
-              <Button onClick={addParticipant} size="sm">
+              <Button onClick={() => setShowParticipantDialog(true)} size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Participant
               </Button>
@@ -263,7 +270,7 @@ export function BoardWizard({ onClose }: BoardWizardProps) {
               <>
                 <div className="flex items-center justify-between">
                   <Label>Columns</Label>
-                  <Button onClick={addColumn} size="sm">
+                  <Button onClick={() => setShowColumnDialog(true)} size="sm">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Column
                   </Button>
@@ -438,6 +445,80 @@ export function BoardWizard({ onClose }: BoardWizardProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Add Participant Dialog */}
+      <Dialog open={showParticipantDialog} onOpenChange={setShowParticipantDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Participant</DialogTitle>
+            <DialogDescription>
+              Enter the name of the participant to add to this board.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="participant-name">Participant Name</Label>
+              <Input
+                id="participant-name"
+                placeholder="Enter participant name..."
+                value={participantName}
+                onChange={(e) => setParticipantName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleAddParticipant()
+                  }
+                }}
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowParticipantDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddParticipant} disabled={!participantName.trim()}>
+              Add
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Column Dialog */}
+      <Dialog open={showColumnDialog} onOpenChange={setShowColumnDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Column</DialogTitle>
+            <DialogDescription>
+              Enter the name of the column to add to this multiscore board.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="column-name">Column Name</Label>
+              <Input
+                id="column-name"
+                placeholder="Enter column name..."
+                value={columnName}
+                onChange={(e) => setColumnName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleAddColumn()
+                  }
+                }}
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowColumnDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddColumn} disabled={!columnName.trim()}>
+              Add
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

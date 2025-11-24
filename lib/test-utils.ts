@@ -190,6 +190,7 @@ export const mock = {
         scores: [],
         history: [],
         sessions: [],
+        tournaments: [],
         ...overrides,
       }
     },

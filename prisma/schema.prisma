@@ -21,6 +21,7 @@ model Board {
   scores      Score[]
   history     History[]
   sessions    Session[]
+  tournaments Tournament[]
 }
 
 model Participant {
@@ -33,6 +34,8 @@ model Participant {
   // Match relationships
   player1Matches Match[] @relation("Player1")
   player2Matches Match[] @relation("Player2")
+  // Tournament relationships
+  tournamentParticipations TournamentParticipant[]
 }
 
 model Column {
@@ -85,8 +88,8 @@ model Session {
 
 model Match {
   id          String   @id @default(cuid())
-  sessionId   String
-  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId   String?
+  session     Session?  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   player1Id   String
   player1     Participant @relation("Player1", fields: [player1Id], references: [id])
   player2Id   String
@@ -95,6 +98,13 @@ model Match {
   player2Score Int
   winnerId    String?  // ID of the winning participant
   status      MatchStatus @default(PENDING)
+  // Tournament fields
+  groupId       String?
+  group         Group?   @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  tournamentId  String?
+  tournament    Tournament? @relation(fields: [tournamentId], references: [id], onDelete: SetNull)
+  round         String?  // "GROUP", "SEMIFINAL", "FINAL"
+  matchNumber   Int?     // Order within round
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -122,4 +132,60 @@ enum MatchStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+model Tournament {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  boardId     String
+  board       Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  status      TournamentStatus @default(DRAFT)
+  phase       TournamentPhase @default(SETUP)
+  groupConfig Json     // { groupSizes: [6, 5], numGroups: 2 }
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  groups      Group[]
+  participants TournamentParticipant[]
+  knockoutMatches Match[] // Semifinals and finals (via Match.tournamentId)
+}
+
+model Group {
+  id          String   @id @default(cuid())
+  tournamentId String
+  tournament  Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  name        String   // "Group A", "Group B"
+  order       Int      // 0, 1, 2...
+  createdAt   DateTime @default(now())
+  matches     Match[]  // Group stage matches
+  participants TournamentParticipant[]
+}
+
+model TournamentParticipant {
+  id            String   @id @default(cuid())
+  tournamentId  String
+  tournament    Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  groupId       String?  // Null until drawn
+  group         Group?   @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  seed          Int?     // Final position in group (1, 2, 3...) after group stage
+  createdAt     DateTime @default(now())
+  
+  @@unique([tournamentId, participantId])
+}
+
+enum TournamentStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum TournamentPhase {
+  SETUP
+  GROUP_DRAW
+  GROUP_STAGE
+  KNOCKOUT
+  COMPLETED
 }

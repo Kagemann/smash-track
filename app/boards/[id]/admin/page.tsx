@@ -10,10 +10,12 @@ import { ArrowLeft, Share2, Settings, Trophy, BarChart3, Calendar } from 'lucide
 import { useBoardStore } from '@/lib/store/board-store'
 import { useUIStore } from '@/lib/store/ui-store'
 import { useScoreStore } from '@/lib/store/score-store'
-import { Board } from '@/types'
+import { Board, Tournament } from '@/types'
 import { LeaderboardTracker } from '@/components/boards/leaderboard-tracker'
 import { MultiscoreTracker } from '@/components/boards/multiscore-tracker'
 import { Navigation } from '@/components/ui/navigation'
+import { TournamentWizard } from '@/components/forms/tournament-wizard'
+import { tournamentService } from '@/lib/services'
 
 export default function BoardAdminPage() {
   const params = useParams()
@@ -23,6 +25,8 @@ export default function BoardAdminPage() {
   const { showToast } = useUIStore()
   const { fetchScores } = useScoreStore()
   const [board, setBoard] = useState<Board | null>(null)
+  const [showTournamentWizard, setShowTournamentWizard] = useState(false)
+  const [tournaments, setTournaments] = useState<Tournament[]>([])
 
   useEffect(() => {
     const getBoardId = async () => {
@@ -37,8 +41,19 @@ export default function BoardAdminPage() {
     if (boardId) {
       fetchBoard(boardId)
       fetchScores(boardId)
+      loadTournaments()
     }
   }, [boardId, fetchBoard, fetchScores])
+
+  const loadTournaments = async () => {
+    if (!boardId) return
+    try {
+      const tournamentList = await tournamentService.getByBoard(boardId)
+      setTournaments(tournamentList)
+    } catch (error) {
+      console.error('Failed to load tournaments:', error)
+    }
+  }
 
   useEffect(() => {
     if (currentBoard) {
@@ -117,6 +132,13 @@ export default function BoardAdminPage() {
                 <Calendar className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">Sessions</span>
                 <span className="sm:hidden">Sessions</span>
+              </a>
+            </Button>
+            <Button variant="outline" size="sm" asChild className="flex-1 sm:flex-none">
+              <a href={`/tournaments?boardId=${boardId}`}>
+                <Trophy className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Tournaments</span>
+                <span className="sm:hidden">Tournaments</span>
               </a>
             </Button>
             <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
@@ -310,6 +332,66 @@ export default function BoardAdminPage() {
           </CardContent>
         </Card>
 
+        {/* Tournaments */}
+        <Card className="mb-8">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5" />
+                  Tournaments
+                </CardTitle>
+                <CardDescription>
+                  Group stage tournaments with knockout rounds
+                </CardDescription>
+              </div>
+              <Button size="sm" onClick={() => setShowTournamentWizard(true)}>
+                Create Tournament
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {tournaments.length > 0 ? (
+              <div className="space-y-3">
+                {tournaments.map((tournament) => (
+                  <div key={tournament.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <div className="font-medium">{tournament.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {tournament.participants.length} players • {tournament.phase.replace('_', ' ')}
+                      </div>
+                      {tournament.description && (
+                        <div className="text-sm text-muted-foreground mt-1">
+                          {tournament.description}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Badge variant="outline">
+                        {tournament.status}
+                      </Badge>
+                      <Button size="sm" variant="outline" asChild>
+                        <a href={`/tournaments/${tournament.id}`}>
+                          View
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Trophy className="h-8 w-8 mx-auto mb-2" />
+                <p>No tournaments created yet</p>
+                <p className="text-sm">Create a tournament with group stages and knockout rounds</p>
+                <Button size="sm" variant="outline" className="mt-2" onClick={() => setShowTournamentWizard(true)}>
+                  Create Tournament
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
          {/* Recent Activity */}
          <Card>
            <CardHeader>
@@ -326,6 +408,16 @@ export default function BoardAdminPage() {
            </CardContent>
          </Card>
       </div>
+
+      {showTournamentWizard && boardId && (
+        <TournamentWizard
+          boardId={boardId}
+          onClose={() => {
+            setShowTournamentWizard(false)
+            loadTournaments()
+          }}
+        />
+      )}
     </div>
   )
 }

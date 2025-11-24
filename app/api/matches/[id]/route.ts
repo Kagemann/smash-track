@@ -119,6 +119,19 @@ export async function PUT(
               },
             }
           },
+          tournament: {
+            select: {
+              id: true,
+              name: true,
+              boardId: true,
+            }
+          },
+          group: {
+            select: {
+              id: true,
+              tournamentId: true,
+            }
+          },
           player1: true,
           player2: true,
         },
@@ -138,14 +151,56 @@ export async function PUT(
         )
       }
 
-      if (match.session.status !== 'ACTIVE') {
-        return NextResponse.json(
-          { success: false, error: 'Session is not active' },
-          { status: 400 }
-        )
+      // Determine if this is a tournament match or session match
+      const isTournamentMatch = !!(match.groupId || match.tournamentId)
+      
+      // Get board ID
+      let finalBoardId: string
+      if (isTournamentMatch) {
+        if (match.tournament?.boardId) {
+          finalBoardId = match.tournament.boardId
+        } else if (match.group?.tournamentId) {
+          const tournament = await prisma.tournament.findUnique({
+            where: { id: match.group.tournamentId },
+            select: { boardId: true }
+          })
+          if (!tournament) {
+            return NextResponse.json(
+              { success: false, error: 'Tournament not found' },
+              { status: 404 }
+            )
+          }
+          finalBoardId = tournament.boardId
+        } else {
+          return NextResponse.json(
+            { success: false, error: 'Could not determine board for tournament match' },
+            { status: 400 }
+          )
+        }
+      } else {
+        if (!match.session?.board?.id) {
+          return NextResponse.json(
+            { success: false, error: 'Could not determine board for session match' },
+            { status: 400 }
+          )
+        }
+        finalBoardId = match.session.board.id
+        
+        // For session matches, validate session is active
+        if (match.session.status !== 'ACTIVE') {
+          return NextResponse.json(
+            { success: false, error: 'Session is not active' },
+            { status: 400 }
+          )
+        }
       }
 
-      // Calculate points and winner using session configuration
+      // Use default scoring for tournament matches (3/0/1) or session scoring
+      const winPoints = isTournamentMatch ? 3 : (match.session?.winPoints || 3)
+      const lossPoints = isTournamentMatch ? 0 : (match.session?.lossPoints || 0)
+      const drawPoints = isTournamentMatch ? 1 : (match.session?.drawPoints || 1)
+
+      // Calculate points and winner
       const { 
         player1Points, 
         player2Points, 
@@ -157,9 +212,9 @@ export async function PUT(
       } = calculateMatchPoints(
         validatedData.player1Score,
         validatedData.player2Score,
-        match.session.winPoints,
-        match.session.lossPoints,
-        match.session.drawPoints
+        winPoints,
+        lossPoints,
+        drawPoints
       )
 
       // Update match
@@ -192,7 +247,7 @@ export async function PUT(
 
       // Get all board columns for comprehensive scoring
       const board = await prisma.board.findUnique({
-        where: { id: match.session.board.id },
+        where: { id: finalBoardId },
         include: { columns: true }
       })
 
@@ -218,7 +273,7 @@ export async function PUT(
           scoreData.push({
             value,
             participantId,
-            boardId: match.session.board.id,
+            boardId: finalBoardId,
             columnId: column.id,
           })
         }
@@ -253,7 +308,7 @@ export async function PUT(
             scoreData.push({
               value: customScore.player1,
               participantId: match.player1Id,
-              boardId: match.session.board.id,
+              boardId: finalBoardId,
               columnId: column.id,
             })
           }
@@ -262,7 +317,7 @@ export async function PUT(
             scoreData.push({
               value: customScore.player2,
               participantId: match.player2Id,
-              boardId: match.session.board.id,
+              boardId: finalBoardId,
               columnId: column.id,
             })
           }
@@ -278,7 +333,7 @@ export async function PUT(
               scoreData.push({
                 value: player1Value,
                 participantId: match.player1Id,
-                boardId: match.session.board.id,
+                boardId: finalBoardId,
                 columnId: column.id,
               })
             }
@@ -288,7 +343,7 @@ export async function PUT(
               scoreData.push({
                 value: player2Value,
                 participantId: match.player2Id,
-                boardId: match.session.board.id,
+                boardId: finalBoardId,
                 columnId: column.id,
               })
             }
@@ -309,12 +364,21 @@ export async function PUT(
       }
 
       // Add to history
+      const matchContext = isTournamentMatch
+        ? {
+            tournamentName: match.tournament?.name || 'Tournament',
+            round: match.round || 'GROUP',
+          }
+        : {
+            sessionName: match.session?.name || 'Session',
+          }
+
       await prisma.history.create({
         data: {
           action: 'match_completed',
           details: {
-            sessionName: match.session.name,
-            boardName: match.session.board.name,
+            ...matchContext,
+            boardName: board.name,
             player1Name: match.player1.name,
             player2Name: match.player2.name,
             player1Score: validatedData.player1Score,
@@ -323,7 +387,7 @@ export async function PUT(
             player2Points,
             winner: winnerId ? (winnerId === 'player1' ? match.player1.name : match.player2.name) : 'Draw',
           },
-          boardId: match.session.board.id,
+          boardId: finalBoardId,
         },
       })
 
@@ -336,6 +400,109 @@ export async function PUT(
     // Handle regular match updates
     const validatedData = updateMatchSchema.parse(body)
 
+    // First, get the match to check if it's a tournament match
+    const existingMatch = await prisma.match.findUnique({
+      where: { id: (await params).id },
+      include: {
+        session: {
+          select: {
+            id: true,
+            name: true,
+            board: {
+              select: {
+                id: true,
+                name: true,
+              }
+            },
+          }
+        },
+        tournament: {
+          select: {
+            id: true,
+            name: true,
+            boardId: true,
+          }
+        },
+        group: {
+          select: {
+            id: true,
+            tournamentId: true,
+          }
+        },
+        player1: true,
+        player2: true,
+      },
+    })
+
+    if (!existingMatch) {
+      return NextResponse.json(
+        { success: false, error: 'Match not found' },
+        { status: 404 }
+      )
+    }
+
+    // Determine if this is a tournament match
+    const isTournamentMatch = !!(existingMatch.groupId || existingMatch.tournamentId)
+    
+    // Get board ID
+    let finalBoardId: string
+    let boardName: string
+    let matchContext: any = {}
+
+    if (isTournamentMatch) {
+      if (existingMatch.tournament?.boardId) {
+        finalBoardId = existingMatch.tournament.boardId
+        const board = await prisma.board.findUnique({
+          where: { id: finalBoardId },
+          select: { name: true }
+        })
+        boardName = board?.name || 'Board'
+        matchContext = {
+          tournamentName: existingMatch.tournament.name,
+          round: existingMatch.round || (existingMatch.groupId ? 'GROUP' : 'UNKNOWN'),
+        }
+      } else if (existingMatch.group?.tournamentId) {
+        const tournament = await prisma.tournament.findUnique({
+          where: { id: existingMatch.group.tournamentId },
+          select: { boardId: true, name: true }
+        })
+        if (!tournament) {
+          return NextResponse.json(
+            { success: false, error: 'Tournament not found' },
+            { status: 404 }
+          )
+        }
+        finalBoardId = tournament.boardId
+        const board = await prisma.board.findUnique({
+          where: { id: finalBoardId },
+          select: { name: true }
+        })
+        boardName = board?.name || 'Board'
+        matchContext = {
+          tournamentName: tournament.name,
+          round: existingMatch.round || 'GROUP',
+        }
+      } else {
+        return NextResponse.json(
+          { success: false, error: 'Could not determine board for tournament match' },
+          { status: 400 }
+        )
+      }
+    } else {
+      if (!existingMatch.session?.board?.id) {
+        return NextResponse.json(
+          { success: false, error: 'Could not determine board for session match' },
+          { status: 400 }
+        )
+      }
+      finalBoardId = existingMatch.session.board.id
+      boardName = existingMatch.session.board.name
+      matchContext = {
+        sessionName: existingMatch.session.name,
+      }
+    }
+
+    // Update the match
     const match = await prisma.match.update({
       where: { id: (await params).id },
       data: validatedData,
@@ -352,6 +519,19 @@ export async function PUT(
             },
           }
         },
+        tournament: {
+          select: {
+            id: true,
+            name: true,
+            boardId: true,
+          }
+        },
+        group: {
+          select: {
+            id: true,
+            tournamentId: true,
+          }
+        },
         player1: true,
         player2: true,
       },
@@ -362,13 +542,13 @@ export async function PUT(
       data: {
         action: 'match_updated',
         details: {
-          sessionName: match.session.name,
-          boardName: match.session.board.name,
+          ...matchContext,
+          boardName: boardName,
           player1Name: match.player1.name,
           player2Name: match.player2.name,
           updatedFields: Object.keys(validatedData),
         },
-        boardId: match.session.board.id,
+        boardId: finalBoardId,
       },
     })
 
@@ -413,6 +593,19 @@ export async function DELETE(
             },
           }
         },
+        tournament: {
+          select: {
+            id: true,
+            name: true,
+            boardId: true,
+          }
+        },
+        group: {
+          select: {
+            id: true,
+            tournamentId: true,
+          }
+        },
         player1: true,
         player2: true,
       },
@@ -425,6 +618,49 @@ export async function DELETE(
       )
     }
 
+    // Determine boardId and context for history
+    const isTournamentMatch = !!(match.groupId || match.tournamentId)
+    let finalBoardId: string
+    let matchContext: any
+
+    if (isTournamentMatch) {
+      let tournamentBoardId: string | undefined
+      let tournamentName: string | undefined
+      if (match.tournament?.boardId) {
+        tournamentBoardId = match.tournament.boardId
+        tournamentName = match.tournament.name
+      } else if (match.group?.tournamentId) {
+        const associatedTournament = await prisma.tournament.findUnique({
+          where: { id: match.group.tournamentId },
+          select: { boardId: true, name: true }
+        })
+        tournamentBoardId = associatedTournament?.boardId
+        tournamentName = associatedTournament?.name
+      }
+      if (!tournamentBoardId) {
+        return NextResponse.json(
+          { success: false, error: 'Could not determine board for tournament match' },
+          { status: 400 }
+        )
+      }
+      finalBoardId = tournamentBoardId
+      matchContext = {
+        tournamentName: tournamentName || 'Tournament',
+        round: match.round || (match.groupId ? 'GROUP' : 'UNKNOWN'),
+      }
+    } else {
+      if (!match.session?.board?.id) {
+        return NextResponse.json(
+          { success: false, error: 'Could not determine board for session match' },
+          { status: 400 }
+        )
+      }
+      finalBoardId = match.session.board.id
+      matchContext = {
+        sessionName: match.session.name || 'Session',
+      }
+    }
+
     // Delete match
     await prisma.match.delete({
       where: { id: (await params).id },
@@ -435,12 +671,14 @@ export async function DELETE(
       data: {
         action: 'match_deleted',
         details: {
-          sessionName: match.session.name,
-          boardName: match.session.board.name,
+          ...matchContext,
+          boardName: isTournamentMatch 
+            ? (await prisma.board.findUnique({ where: { id: finalBoardId }, select: { name: true } }))?.name || 'Board'
+            : match.session?.board?.name || 'Board',
           player1Name: match.player1.name,
           player2Name: match.player2.name,
         },
-        boardId: match.session.board.id,
+        boardId: finalBoardId,
       },
     })
 
